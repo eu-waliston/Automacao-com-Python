@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="3ea30577-4493-4080-8634-83a6d02af561" name="Changes" comment="🧪 MÓDULO 14: Testes e Debugging">
-      <change afterPath="$PROJECT_DIR$/modulo_15/pratica_15.md" afterDir="false" />
+    <list default="true" id="3ea30577-4493-4080-8634-83a6d02af561" name="Changes" comment="🚀 MÓDULO 15: Projeto Final Integrado - AutoSys Pro">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modulo_15/autosys-pro/src/alertas/canais.py" beforeDir="false" afterPath="$PROJECT_DIR$/modulo_15/autosys-pro/src/alertas/canais.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modulo_15/autosys-pro/src/alertas/priorizacao.py" beforeDir="false" afterPath="$PROJECT_DIR$/modulo_15/autosys-pro/src/alertas/priorizacao.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modulo_15/autosys-pro/src/backup/gerenciador.py" beforeDir="false" afterPath="$PROJECT_DIR$/modulo_15/autosys-pro/src/backup/gerenciador.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modulo_15/autosys-pro/src/backup/inteligencia.py" beforeDir="false" afterPath="$PROJECT_DIR$/modulo_15/autosys-pro/src/backup/inteligencia.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modulo_15/autosys-pro/src/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/modulo_15/autosys-pro/src/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modulo_15/autosys-pro/src/exceptions.py" beforeDir="false" afterPath="$PROJECT_DIR$/modulo_15/autosys-pro/src/exceptions.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modulo_15/autosys-pro/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/modulo_15/autosys-pro/src/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modulo_15/autosys-pro/src/monitor/preditor.py" beforeDir="false" afterPath="$PROJECT_DIR$/modulo_15/autosys-pro/src/monitor/preditor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modulo_15/autosys-pro/src/monitor/sistema.py" beforeDir="false" afterPath="$PROJECT_DIR$/modulo_15/autosys-pro/src/monitor/sistema.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -74,7 +83,7 @@
       <option name="presentableId" value="Default" />
       <updated>1770945973803</updated>
       <workItem from="1770945973807" duration="443000" />
-      <workItem from="1770946421944" duration="3490000" />
+      <workItem from="1770946421944" duration="4421000" />
     </task>
     <task id="LOCAL-00001" summary="🔧 MÓDULO 10: Agendamento e Task Queues">
       <option name="closed" value="true" />
@@ -132,7 +141,15 @@
       <option name="project" value="LOCAL" />
       <updated>1770949644543</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="🚀 MÓDULO 15: Projeto Final Integrado - AutoSys Pro">
+      <option name="closed" value="true" />
+      <created>1770950115617</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1770950115617</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -144,6 +161,7 @@
     <MESSAGE value=" MÓDULO 12: Segurança em Automação" />
     <MESSAGE value=" MÓDULO 13: Monitoramento e Logging" />
     <MESSAGE value=" MÓDULO 14: Testes e Debugging" />
-    <option name="LAST_COMMIT_MESSAGE" value=" MÓDULO 14: Testes e Debugging" />
+    <MESSAGE value=" MÓDULO 15: Projeto Final Integrado - AutoSys Pro" />
+    <option name="LAST_COMMIT_MESSAGE" value=" MÓDULO 15: Projeto Final Integrado - AutoSys Pro" />
   </component>
 </project>

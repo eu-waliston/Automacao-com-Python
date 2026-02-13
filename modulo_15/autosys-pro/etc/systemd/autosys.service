@@ -1,0 +1,40 @@
+# /etc/systemd/system/autosys.service
+[Unit]
+Description=AutoSys Pro - Intelligent Automation System
+After=network.target postgresql.service redis.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=autosys
+Group=autosys
+WorkingDirectory=/opt/autosys-pro
+Environment="PATH=/opt/autosys-pro/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PYTHONPATH=/opt/autosys-pro"
+EnvironmentFile=/opt/autosys-pro/.env
+
+ExecStart=/opt/autosys-pro/venv/bin/python -m src.main
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill -TERM $MAINPID
+
+Restart=always
+RestartSec=10
+
+# Security
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/autosys-pro/data /opt/autosys-pro/logs
+
+# Limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=autosys
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,156 @@
+# docker/docker-compose.yml
+version: '3.8'
+
+services:
+  autosys-pro:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: autosys-pro
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../data:/app/data
+      - ../configs:/app/configs
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    environment:
+      - TZ=America/Sao_Paulo
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+    env_file:
+      - ../.env
+    networks:
+      - autosys-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: autosys-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=autosys
+      - POSTGRES_USER=autosys
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-autosys123}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - autosys-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autosys"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  redis:
+    image: redis:7-alpine
+    container_name: autosys-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
+    volumes:
+      - redis-data:/data
+    networks:
+      - autosys-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  nginx:
+    image: nginx:alpine
+    container_name: autosys-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../web/static:/usr/share/nginx/html/static:ro
+      - ../web/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - autosys-pro
+    networks:
+      - autosys-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: autosys-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ../dashboards/grafana:/etc/grafana/provisioning
+    depends_on:
+      - postgres
+    networks:
+      - autosys-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: autosys-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - autosys-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+networks:
+  autosys-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  grafana-data:
+  prometheus-data:

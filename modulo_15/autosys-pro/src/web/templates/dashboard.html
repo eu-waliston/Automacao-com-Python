@@ -1,0 +1,826 @@
+<!-- src/web/templates/dashboard.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }} - AutoSys Pro</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Socket.io (para dados em tempo real) -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+        }
+
+        body {
+            background-color: #f1f5f9;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(180deg, var(--dark-bg) 0%, #1a2634 100%);
+            color: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            margin: 5px 10px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .sidebar .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary-color), #1e40af);
+            color: white;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .alert-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .severity-critical { background: var(--danger-color); color: white; }
+        .severity-high { background: #f97316; color: white; }
+        .severity-medium { background: var(--warning-color); color: black; }
+        .severity-low { background: #3b82f6; color: white; }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .status-critical {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 col-lg-2 px-0 sidebar">
+                <div class="p-4">
+                    <h3 class="text-white mb-4">
+                        <i class="fas fa-robot me-2"></i>AutoSys Pro
+                    </h3>
+                    <p class="text-white-50 small mb-4">Sistema de Automação Inteligente</p>
+
+                    <nav class="nav flex-column">
+                        <a class="nav-link active" href="/">
+                            <i class="fas fa-chart-line me-2"></i>Dashboard
+                        </a>
+                        <a class="nav-link" href="/monitor">
+                            <i class="fas fa-desktop me-2"></i>Monitoramento
+                        </a>
+                        <a class="nav-link" href="/backups">
+                            <i class="fas fa-database me-2"></i>Backups
+                        </a>
+                        <a class="nav-link" href="/alertas">
+                            <i class="fas fa-bell me-2"></i>Alertas
+                        </a>
+                        <a class="nav-link" href="/configuracoes">
+                            <i class="fas fa-cog me-2"></i>Configurações
+                        </a>
+                        <hr class="my-4 bg-white-50">
+                        <a class="nav-link" href="#" id="manualBackup">
+                            <i class="fas fa-play me-2"></i>Backup Manual
+                        </a>
+                        <a class="nav-link" href="#" id="checkStatus">
+                            <i class="fas fa-sync-alt me-2"></i>Verificar Status
+                        </a>
+                    </nav>
+
+                    <div class="mt-5 p-3 bg-white bg-opacity-10 rounded">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-circle text-success me-2"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <span class="text-white">Sistema</span>
+                                <span class="badge bg-success ms-2">Online</span>
+                                <div class="small text-white-50" id="systemUptime">
+                                    Carregando...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 col-lg-10 px-4 py-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h2">
+                        <i class="fas fa-chart-line me-2 text-primary"></i>
+                        Dashboard
+                    </h1>
+                    <div>
+                        <span class="badge bg-light text-dark p-3">
+                            <i class="far fa-clock me-2"></i>
+                            <span id="currentDateTime">{{ current_time }}</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Status Cards -->
+                <div class="row g-4 mb-5">
+                    <div class="col-md-3">
+                        <div class="card stat-card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="text-white-50 mb-1">CPU</p>
+                                        <h2 class="metric-value mb-0" id="cpuValue">0%</h2>
+                                    </div>
+                                    <div class="display-4">
+                                        <i class="fas fa-microchip"></i>
+                                    </div>
+                                </div>
+                                <div class="progress mt-3" style="height: 8px;">
+                                    <div id="cpuProgress" class="progress-bar bg-success"
+                                         role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card stat-card h-100" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="text-white-50 mb-1">Memória</p>
+                                        <h2 class="metric-value mb-0" id="memoryValue">0%</h2>
+                                    </div>
+                                    <div class="display-4">
+                                        <i class="fas fa-memory"></i>
+                                    </div>
+                                </div>
+                                <div class="progress mt-3" style="height: 8px;">
+                                    <div id="memoryProgress" class="progress-bar bg-info"
+                                         role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card stat-card h-100" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="text-white-50 mb-1">Disco</p>
+                                        <h2 class="metric-value mb-0" id="diskValue">0%</h2>
+                                    </div>
+                                    <div class="display-4">
+                                        <i class="fas fa-hdd"></i>
+                                    </div>
+                                </div>
+                                <div class="progress mt-3" style="height: 8px;">
+                                    <div id="diskProgress" class="progress-bar bg-warning"
+                                         role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card stat-card h-100" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="text-white-50 mb-1">Risco de Falha</p>
+                                        <h2 class="metric-value mb-1" id="riskValue">0%</h2>
+                                    </div>
+                                    <div class="display-4">
+                                        <i class="fas fa-shield-alt"></i>
+                                    </div>
+                                </div>
+                                <span class="badge bg-light text-dark" id="riskLevel">Calculando...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="row g-4 mb-5">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header bg-white py-3">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-chart-area me-2 text-primary"></i>
+                                    Métricas em Tempo Real
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="metricsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-white py-3">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-bell me-2 text-warning"></i>
+                                    Últimos Alertas
+                                </h5>
+                            </div>
+                            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                                <div id="alertsList">
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                                        <p>Carregando alertas...</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white">
+                                <a href="/alertas" class="btn btn-sm btn-outline-primary w-100">
+                                    Ver todos os alertas
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Backup and Prediction Row -->
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-white py-3">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-database me-2 text-success"></i>
+                                    Últimos Backups
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="backupsList">
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                                        <p>Carregando backups...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-white py-3">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-lightbulb me-2 text-info"></i>
+                                    Recomendações
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="recommendationsList">
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                                        <p>Carregando recomendações...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Inicialização
+        let metricsChart;
+        let socket;
+        let updateInterval;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeChart();
+            loadDashboardData();
+            startRealTimeUpdates();
+
+            // Event listeners
+            document.getElementById('manualBackup').addEventListener('click', function(e) {
+                e.preventDefault();
+                startManualBackup();
+            });
+
+            document.getElementById('checkStatus').addEventListener('click', function(e) {
+                e.preventDefault();
+                checkSystemStatus();
+            });
+        });
+
+        function initializeChart() {
+            const ctx = document.getElementById('metricsChart').getContext('2d');
+            metricsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'CPU %',
+                            data: [],
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Memória %',
+                            data: [],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Disco %',
+                            data: [],
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadDashboardData() {
+            try {
+                // Carrega status do sistema
+                const statusResponse = await fetch('/api/v1/status');
+                const statusData = await statusResponse.json();
+
+                updateStatusCards(statusData.current_metrics);
+                updateUptime(statusData.uptime);
+
+                // Carrega alertas recentes
+                loadRecentAlerts();
+
+                // Carrega backups recentes
+                loadRecentBackups();
+
+                // Carrega recomendações
+                loadRecommendations();
+
+                // Carrega métricas históricas
+                loadHistoricalMetrics();
+
+            } catch (error) {
+                console.error('Erro ao carregar dashboard:', error);
+                showToast('Erro ao carregar dados do dashboard', 'danger');
+            }
+        }
+
+        function updateStatusCards(metrics) {
+            if (!metrics) return;
+
+            // CPU
+            document.getElementById('cpuValue').textContent = `${Math.round(metrics.cpu)}%`;
+            const cpuProgress = document.getElementById('cpuProgress');
+            cpuProgress.style.width = `${metrics.cpu}%`;
+            cpuProgress.classList.remove('bg-success', 'bg-warning', 'bg-danger');
+
+            if (metrics.cpu > 80) {
+                cpuProgress.classList.add('bg-danger');
+            } else if (metrics.cpu > 60) {
+                cpuProgress.classList.add('bg-warning');
+            } else {
+                cpuProgress.classList.add('bg-success');
+            }
+
+            // Memória
+            document.getElementById('memoryValue').textContent = `${Math.round(metrics.memory)}%`;
+            const memProgress = document.getElementById('memoryProgress');
+            memProgress.style.width = `${metrics.memory}%`;
+
+            // Disco
+            document.getElementById('diskValue').textContent = `${Math.round(metrics.disk)}%`;
+            const diskProgress = document.getElementById('diskProgress');
+            diskProgress.style.width = `${metrics.disk}%`;
+        }
+
+        async function loadRecentAlerts() {
+            try {
+                const response = await fetch('/api/v1/alertas?limit=5');
+                const data = await response.json();
+
+                const alertsList = document.getElementById('alertsList');
+
+                if (data.alertas && data.alertas.length > 0) {
+                    let html = '';
+
+                    data.alertas.forEach(alerta => {
+                        const severityClass = getSeverityClass(alerta.severidade);
+                        const timeAgo = getTimeAgo(alerta.timestamp);
+
+                        html += `
+                            <div class="alert alert-${severityClass} alert-dismissible fade show mb-2">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-${getAlertIcon(alerta.tipo)}"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <strong>${alerta.tipo}</strong>
+                                        <p class="mb-0 small">${alerta.mensagem}</p>
+                                        <small class="text-muted">${timeAgo}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    alertsList.innerHTML = html;
+                } else {
+                    alertsList.innerHTML = `
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-check-circle fa-2x mb-3 text-success"></i>
+                            <p>Nenhum alerta recente</p>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar alertas:', error);
+            }
+        }
+
+        async function loadRecentBackups() {
+            try {
+                const response = await fetch('/api/v1/backups?limit=5');
+                const data = await response.json();
+
+                const backupsList = document.getElementById('backupsList');
+
+                if (data.backups && data.backups.length > 0) {
+                    let html = '<div class="list-group">';
+
+                    data.backups.forEach(backup => {
+                        const statusIcon = backup.sucesso ? 'check-circle text-success' : 'exclamation-circle text-danger';
+                        const timeAgo = getTimeAgo(backup.timestamp);
+
+                        html += `
+                            <div class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">
+                                        <i class="fas fa-${statusIcon} me-2"></i>
+                                        Backup ${backup.id}
+                                    </h6>
+                                    <small class="text-muted">${timeAgo}</small>
+                                </div>
+                                <p class="mb-1 small">
+                                    Tipo: ${backup.tipo} |
+                                    Tamanho: ${backup.tamanho_mb?.toFixed(2)}MB |
+                                    Duração: ${backup.duracao?.toFixed(2)}s
+                                </p>
+                            </div>
+                        `;
+                    });
+
+                    html += '</div>';
+                    backupsList.innerHTML = html;
+                } else {
+                    backupsList.innerHTML = `
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-database fa-2x mb-3"></i>
+                            <p>Nenhum backup encontrado</p>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar backups:', error);
+            }
+        }
+
+        async function loadRecommendations() {
+            try {
+                // Carrega estratégia de backup
+                const estrategiaResponse = await fetch('/api/v1/estrategia-backup');
+                const estrategiaData = await estrategiaResponse.json();
+
+                // Carrega predição de falhas
+                const predicaoResponse = await fetch('/api/v1/predicoes');
+                const predicaoData = await predicaoResponse.json();
+
+                const recommendationsList = document.getElementById('recommendationsList');
+
+                let html = '<div class="list-group">';
+
+                // Recomendação de backup
+                if (estrategiaData.estrategia) {
+                    html += `
+                        <div class="list-group-item">
+                            <h6 class="mb-2">
+                                <i class="fas fa-database me-2 text-primary"></i>
+                                Estratégia de Backup
+                            </h6>
+                            <p class="mb-1">
+                                <strong>${estrategiaData.estrategia.tipo}</strong> -
+                                ${estrategiaData.estrategia.tamanho_estimado_mb}MB estimados
+                            </p>
+                            <small class="text-muted">
+                                Último backup: ${estrategiaData.estrategia.dias_desde_ultimo_backup} dias atrás
+                            </small>
+                        </div>
+                    `;
+                }
+
+                // Recomendação de risco
+                if (predicaoData && predicaoData.nivel_risco) {
+                    const riskClass = getRiskClass(predicaoData.nivel_risco);
+                    html += `
+                        <div class="list-group-item">
+                            <h6 class="mb-2">
+                                <i class="fas fa-shield-alt me-2 text-${riskClass}"></i>
+                                Análise de Risco
+                            </h6>
+                            <p class="mb-1">
+                                <span class="badge bg-${riskClass}">
+                                    ${predicaoData.nivel_risco.toUpperCase()}
+                                </span>
+                                Risco: ${(predicaoData.probabilidade * 100).toFixed(1)}%
+                            </p>
+                            <small class="text-muted">${predicaoData.mensagem}</small>
+                        </div>
+                    `;
+                }
+
+                html += '</div>';
+                recommendationsList.innerHTML = html;
+
+                // Atualiza card de risco
+                if (predicaoData) {
+                    document.getElementById('riskValue').textContent =
+                        `${(predicaoData.probabilidade * 100).toFixed(1)}%`;
+
+                    const riskLevel = document.getElementById('riskLevel');
+                    riskLevel.textContent = predicaoData.nivel_risco;
+                    riskLevel.className = `badge bg-${getRiskClass(predicaoData.nivel_risco)}`;
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar recomendações:', error);
+            }
+        }
+
+        async function loadHistoricalMetrics() {
+            try {
+                const response = await fetch('/api/v1/metrics?period=1h&limit=30');
+                const data = await response.json();
+
+                if (data.metrics && data.metrics.length > 0) {
+                    const labels = data.metrics.map(m =>
+                        new Date(m.timestamp).toLocaleTimeString('pt-BR', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })
+                    ).reverse();
+
+                    const cpuData = data.metrics.map(m => m.cpu).reverse();
+                    const memoryData = data.metrics.map(m => m.memory).reverse();
+                    const diskData = data.metrics.map(m => m.disk).reverse();
+
+                    metricsChart.data.labels = labels;
+                    metricsChart.data.datasets[0].data = cpuData;
+                    metricsChart.data.datasets[1].data = memoryData;
+                    metricsChart.data.datasets[2].data = diskData;
+                    metricsChart.update();
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar métricas históricas:', error);
+            }
+        }
+
+        function startRealTimeUpdates() {
+            // Atualiza a cada 10 segundos
+            updateInterval = setInterval(() => {
+                loadDashboardData();
+            }, 10000);
+
+            // WebSocket para dados em tempo real (opcional)
+            try {
+                socket = io();
+
+                socket.on('connect', function() {
+                    console.log('Conectado ao WebSocket');
+                });
+
+                socket.on('new_metric', function(metric) {
+                    updateStatusCards(metric);
+
+                    // Adiciona ao gráfico
+                    const time = new Date(metric.timestamp).toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    metricsChart.data.labels.push(time);
+                    metricsChart.data.datasets[0].data.push(metric.cpu);
+                    metricsChart.data.datasets[1].data.push(metric.memory);
+                    metricsChart.data.datasets[2].data.push(metric.disk);
+
+                    // Mantém apenas últimas 30 pontos
+                    if (metricsChart.data.labels.length > 30) {
+                        metricsChart.data.labels.shift();
+                        metricsChart.data.datasets[0].data.shift();
+                        metricsChart.data.datasets[1].data.shift();
+                        metricsChart.data.datasets[2].data.shift();
+                    }
+
+                    metricsChart.update();
+                });
+
+                socket.on('new_alert', function(alert) {
+                    showToast(`Novo alerta: ${alert.mensagem}`, getSeverityClass(alert.severidade));
+                    loadRecentAlerts(); // Recarrega lista de alertas
+                });
+
+            } catch (error) {
+                console.log('WebSocket não disponível, usando polling apenas');
+            }
+        }
+
+        async function startManualBackup() {
+            try {
+                const response = await fetch('/api/v1/backups?tipo=completo', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'started') {
+                    showToast('Backup iniciado com sucesso!', 'success');
+                    // Recarrega lista de backups após 5 segundos
+                    setTimeout(() => {
+                        loadRecentBackups();
+                    }, 5000);
+                }
+
+            } catch (error) {
+                console.error('Erro ao iniciar backup:', error);
+                showToast('Erro ao iniciar backup', 'danger');
+            }
+        }
+
+        async function checkSystemStatus() {
+            try {
+                const response = await fetch('/api/v1/health');
+                const data = await response.json();
+
+                if (data.status === 'healthy') {
+                    showToast('Sistema operando normalmente', 'success');
+                }
+
+            } catch (error) {
+                console.error('Erro ao verificar status:', error);
+                showToast('Erro ao verificar status do sistema', 'danger');
+            }
+        }
+
+        // Funções auxiliares
+        function getSeverityClass(severity) {
+            const map = {
+                'critica': 'danger',
+                'alta': 'warning',
+                'media': 'info',
+                'baixa': 'secondary',
+                'info': 'light'
+            };
+            return map[severity?.toLowerCase()] || 'primary';
+        }
+
+        function getRiskClass(risk) {
+            const map = {
+                'crítico': 'danger',
+                'alto': 'warning',
+                'médio': 'warning',
+                'baixo': 'success',
+                'mínimo': 'success'
+            };
+            return map[risk?.toLowerCase()] || 'secondary';
+        }
+
+        function getAlertIcon(tipo) {
+            const map = {
+                'cpu_alta': 'microchip',
+                'memoria_alta': 'memory',
+                'disco_alto': 'hdd',
+                'predicao_falha': 'chart-line',
+                'backup_erro': 'database'
+            };
+            return map[tipo] || 'bell';
+        }
+
+        function getTimeAgo(timestamp) {
+            const now = new Date();
+            const past = new Date(timestamp);
+            const diffMs = now - past;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffMins < 1) return 'agora mesmo';
+            if (diffMins < 60) return `${diffMins} min atrás`;
+            if (diffHours < 24) return `${diffHours} h atrás`;
+            return `${diffDays} d atrás`;
+        }
+
+        function updateUptime(uptime) {
+            document.getElementById('systemUptime').textContent = `Ativo há ${uptime}`;
+        }
+
+        function showToast(message, type = 'info') {
+            // Implementar toast notifications
+            console.log(`[${type}] ${message}`);
+        }
+
+        // Cleanup ao sair da página
+        window.addEventListener('beforeunload', function() {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+            }
+            if (socket) {
+                socket.disconnect();
+            }
+        });
+    </script>
+</body>
+</html>
