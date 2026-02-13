@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="3ea30577-4493-4080-8634-83a6d02af561" name="Changes" comment="🐳 MÓDULO 11: Automação com Docker">
-      <change afterPath="$PROJECT_DIR$/modulo_12/2_1_Gerenciamento_de_Secrets.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modulo_12/pratica_12.md" afterDir="false" />
+    <list default="true" id="3ea30577-4493-4080-8634-83a6d02af561" name="Changes" comment="🔐 MÓDULO 12: Segurança em Automação">
+      <change afterPath="$PROJECT_DIR$/modulo_13/13_1_logging_Profissional.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modulo_13/13_2_Monitoramento_de_Sistema.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modulo_13/pratica_13.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -75,7 +77,7 @@
       <option name="presentableId" value="Default" />
       <updated>1770945973803</updated>
       <workItem from="1770945973807" duration="443000" />
-      <workItem from="1770946421944" duration="1484000" />
+      <workItem from="1770946421944" duration="2723000" />
     </task>
     <task id="LOCAL-00001" summary="🔧 MÓDULO 10: Agendamento e Task Queues">
       <option name="closed" value="true" />
@@ -109,7 +111,15 @@
       <option name="project" value="LOCAL" />
       <updated>1770947251355</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="🔐 MÓDULO 12: Segurança em Automação">
+      <option name="closed" value="true" />
+      <created>1770948185385</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1770948185385</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -118,6 +128,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value=" MÓDULO 10: Agendamento e Task Queues" />
     <MESSAGE value=" MÓDULO 11: Automação com Docker" />
-    <option name="LAST_COMMIT_MESSAGE" value=" MÓDULO 11: Automação com Docker" />
+    <MESSAGE value=" MÓDULO 12: Segurança em Automação" />
+    <option name="LAST_COMMIT_MESSAGE" value=" MÓDULO 12: Segurança em Automação" />
   </component>
 </project>
