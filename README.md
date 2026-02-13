@@ -157,7 +157,6 @@ python scripts/verifica_ambiente.py
 | 1️⃣3️⃣   | Monitoramento                     | 3h      | ⭐⭐⭐      |
 | 1️⃣4️⃣   | Testes e Debugging                | 3h      | ⭐⭐⭐      |
 | 1️⃣5️⃣   | Projeto Final                     | 6h      | ⭐⭐⭐⭐⭐  |
-| 1️⃣6️⃣   |  Machine Learning para Automação  | 6h      | ⭐⭐⭐⭐⭐  |
 
 
 ## 💡 Exemplos Práticos
